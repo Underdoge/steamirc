@@ -1,0 +1,38 @@
+[
+    {
+      "nickname": "steamirc",
+      "server": "irc.rizon.net",
+      "discordToken": "NDI4NjQ4NTYwMjkzMzE0NTYw.XYJ5vg.XjiSffFsFUrDCaMgmcKns-l48MY",
+      "autoSendCommands": [
+        ["PRIVMSG", "NickServ", "IDENTIFY YUn0h@x0r"],
+        ["MODE", "steamirc", "+x"]
+      ],
+      "channelMapping": {
+        "#irc": "#steam",
+        "#sales": "#node.js",
+	"#testing": "#testing"
+    },
+      "ircOptions": {
+        "floodProtection": false,
+        "floodProtectionDelay": 1000,
+        "port": 9999,
+        "secure": true
+      },
+      "format": {
+        "ircText": "<{$displayUsername}> {$text}", 
+        "urlAttachment": "<{$displayUsername}> {$attachmentURL}",
+        "discord": "**<{$author}>** {$withMentions}"
+      },
+
+      "commandCharacters": ["!", "."],
+      "ircStatusNotices": false,
+      "ignoreUsers": {
+        "irc": ["jennayy", "Internets","MrMoose"], 
+        "discord": ["discord_nick1", "discord_nick2"]
+      },
+
+      "webhooks": {
+        "#discord": "https://discordapp.com/api/webhooks/428661055749750786/eHv9H47SzHtx3ogr1zlJYQHvQj8pbpbrLqGK_AGCUWAYXJP92wn_q4Bt6pCcO1DtFump"
+      }
+    }
+]
