@@ -1,14 +1,18 @@
 [
     {
-      "nickname": "xxxxxxxxx",
-      "server": "irc.server.net",
-      "discordToken": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "nickname": "steamirc",
+      "server": "irc.rizon.net",
+      "discordToken": "NDI4NjQ4NTYwMjkzMzE0NTYw.XYJ5vg.XjiSffFsFUrDCaMgmcKns-l48MY",
       "autoSendCommands": [
-        ["PRIVMSG", "NickServ", "IDENTIFY xxxxxxxxxxxxxxxx"],
-        ["MODE", "xxxxxxxxxxxxxx", "+x"]
+        ["PRIVMSG", "NickServ", "IDENTIFY LGllBRLG2"],
+        ["MODE", "steamirc", "+x"]
       ],
       "channelMapping": {
-        "#irc": "#xxxxxxxxx"
+        "#irc": "#steam",
+        "#sales": "#node.js",
+	      "#testing": "#testing",
+	      "#hodl": "#HODL",
+        "#microtrailers": "#microtrailers"
     },
       "ircOptions": {
         "floodProtection": false,
@@ -25,12 +29,13 @@
       "commandCharacters": ["!"],
       "ircStatusNotices": false,
       "ignoreUsers": {
-        "irc": ["xxxxxxxx"], 
+        "irc": ["jennayy", "Internets","MrMoose"], 
         "discord": ["discord_nick1", "discord_nick2"]
       },
 
       "webhooks": {
-        "#xxxxxxxxxxx": "https://discordapp.com/api/webhooks/XXXXXXXXXXXXX/XXXXXXXXXXXXXXXX"
+        "#irc": "https://discordapp.com/api/webhooks/428661055749750786/eHv9H47SzHtx3ogr1zlJYQHvQj8pbpbrLqGK_AGCUWAYXJP92wn_q4Bt6pCcO1DtFump",
+	"#hodl": "https://discord.com/api/webhooks/821258569344614431/eIQFbjP2814VHKhG4vBy7j6BEanJ_NpMwEkWe-7CjB9hfB-A7XcRn23xuIjHlRem1JbI"
       }
     }
 ]
