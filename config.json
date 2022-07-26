@@ -30,7 +30,7 @@
       },
 
       "webhooks": {
-        "#xxxxxxxxxxx": "https://discordapp.com/api/webhooks/XXXXXXXXXXXXX/XXXXXXXXXXXXXXXXX"
+        "#xxxxxxxxxxx": "https://discordapp.com/api/webhooks/XXXXXXXXXXXXX/XXXXXXXXXXXXXXXX"
       }
     }
 ]
