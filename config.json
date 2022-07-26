@@ -1,0 +1,36 @@
+[
+    {
+      "nickname": "xxxxxxxxx",
+      "server": "irc.server.net",
+      "discordToken": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "autoSendCommands": [
+        ["PRIVMSG", "NickServ", "IDENTIFY xxxxxxxxxxxxxxxx"],
+        ["MODE", "xxxxxxxxxxxxxx", "+x"]
+      ],
+      "channelMapping": {
+        "#irc": "#xxxxxxxxx"
+    },
+      "ircOptions": {
+        "floodProtection": false,
+        "floodProtectionDelay": 1000,
+        "port": 9999,
+        "secure": true
+      },
+      "format": {
+        "ircText": "<{$displayUsername}> {$text}", 
+        "urlAttachment": "<{$displayUsername}> {$attachmentURL}",
+        "discord": "**<{$author}>** {$withMentions}"
+      },
+
+      "commandCharacters": ["!"],
+      "ircStatusNotices": false,
+      "ignoreUsers": {
+        "irc": ["xxxxxxxx"], 
+        "discord": ["discord_nick1", "discord_nick2"]
+      },
+
+      "webhooks": {
+        "#xxxxxxxxxxx": "https://discordapp.com/api/webhooks/XXXXXXXXXXXXX/XXXXXXXXXXXXXXXX"
+      }
+    }
+]
