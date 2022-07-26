@@ -1,12 +1,13 @@
-# discord-irc [![Build Status](https://travis-ci.org/reactiflux/discord-irc.svg?branch=master)](https://travis-ci.org/reactiflux/discord-irc) [![Coverage Status](https://coveralls.io/repos/github/reactiflux/discord-irc/badge.svg?branch=master)](https://coveralls.io/github/reactiflux/discord-irc?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/reactiflux/discord-irc/badge.svg?branch=main)](https://coveralls.io/github/reactiflux/discord-irc?branch=main)
 
-> Connects [Discord](https://discordapp.com/) and [IRC](https://www.ietf.org/rfc/rfc1459.txt) channels by sending messages back and forth.
+> Connects [Discord](https://discord.com/) and [IRC](https://www.ietf.org/rfc/rfc1459.txt) channels by sending messages back and forth.
 
 ## Example
 ![discord-irc](http://i.imgur.com/oI6iCrf.gif)
 
 ## Installation and usage
-**Note**: discord-irc requires Node.js version 6 or newer, as it depends on [discord.js](https://github.com/hydrabolt/discord.js).
+**Note**: discord-irc requires Node.js version 12 or newer, as it depends on [discord.js](https://github.com/hydrabolt/discord.js).
+Future versions may require newer Node.js versions, though we should support active releases.
 
 Before you can run discord-irc you need to create a configuration file by
 following the instructions [here](https://github.com/reactiflux/discord-irc#configuration).
@@ -36,6 +37,24 @@ import discordIRC from 'discord-irc';
 import config from './config.json';
 discordIRC(config);
 ```
+
+## Docker
+As an alternative to running discord-irc directly on your machine, we provide a [Docker container image](https://hub.docker.com/r/discordirc/discord-irc).
+After creating a configuration file, you can fetch the image from Docker Hub and run it with the following command:
+
+```bash
+docker run -v /path/to/config:/config/config.json discordirc/discord-irc
+```
+
+If you've checked out the repository already, you can build the Docker image locally and run that instead:
+
+```bash
+docker build -t discord-irc .
+docker run -v /path/to/config:/config/config.json discord-irc
+```
+
+Note that the path to the config file on the host (`/path/to/config`) _must_ be a valid absolute path to a config file.
+Otherwise, you may get the error "illegal operation on a directory".
 
 ## Configuration
 First you need to create a Discord bot user, which you can do by following the instructions [here](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token).
@@ -88,18 +107,20 @@ First you need to create a Discord bot user, which you can do by following the i
       "webhookAvatarURL": "https://robohash.org/{$nickname}" // Default avatar to use for webhook messages
     },
     "ircNickColor": false, // Gives usernames a color in IRC for better readability (on by default)
-    "ircPreventMention": true, // Prevents users of both IRC and Discord from being mentioned in IRC when they speak in Discord (off by default)
+    "ircNickColors": ['light_blue', 'dark_blue', 'light_red', 'dark_red', 'light_green', 'dark_green', 'magenta', 'light_magenta', 'orange', 'yellow', 'cyan', 'light_cyan'], // Which irc-upd colors to use
+    "parallelPingFix": true, // Prevents users of both IRC and Discord from being mentioned in IRC when they speak in Discord (off by default)
     // Makes the bot hide the username prefix for messages that start
     // with one of these characters (commands):
     "commandCharacters": ["!", "."],
     "ircStatusNotices": true, // Enables notifications in Discord when people join/part in the relevant IRC channel
     "ignoreUsers": {
       "irc": ["irc_nick1", "irc_nick2"], // Ignore specified IRC nicks and do not send their messages to Discord.
-      "discord": ["discord_nick1", "discord_nick2"] // Ignore specified Discord nicks and do not send their messages to IRC.
+      "discord": ["discord_nick1", "discord_nick2"], // Ignore specified Discord nicks and do not send their messages to IRC.
+      "discordIds": ["198528216523210752"] // Ignore specified Discord ids and do not send their messages to IRC.
     },
     // List of webhooks per channel
     "webhooks": {
-      "#discord": "https://discordapp.com/api/webhooks/id/token"
+      "#discord": "https://discord.com/api/webhooks/id/token"
     }
   }
 ]
@@ -116,13 +137,13 @@ can appear as regular Discord messages:
 ![discord-webhook](http://i.imgur.com/lNeJIUI.jpg)
 
 To enable webhooks, follow part 1 of [this
-guide](https://support.discordapp.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
+guide](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks)
 to create and retrieve a webhook URL for a specific channel, then enable it in
 discord-irc's config as follows:
 
 ```json
   "webhooks": {
-    "#discord-channel": "https://discordapp.com/api/webhooks/id/token"
+    "#discord-channel": "https://discord.com/api/webhooks/id/token"
   }
 ```
 

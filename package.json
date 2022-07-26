@@ -1,6 +1,6 @@
 {
   "name": "discord-irc",
-  "version": "2.7.2",
+  "version": "2.9.0",
   "description": "Connects IRC and Discord channels by sending messages back and forth.",
   "keywords": [
     "discord",
@@ -11,7 +11,7 @@
     "reactiflux"
   ],
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=12.0.0"
   },
   "main": "dist/index.js",
   "bin": "dist/index.js",
@@ -27,8 +27,8 @@
     "build": "babel lib --out-dir dist",
     "prepare": "npm run build",
     "lint": "eslint . --ignore-path .gitignore",
-    "coverage": "nyc --require babel-core/register _mocha -- 'test/*.test.js'",
-    "report": "nyc report --reporter=text-lcov | coveralls",
+    "coverage": "cross-env NODE_ENV=test nyc --require @babel/register mocha -- 'test/*.test.js'",
+    "save-coverage": "nyc report --reporter=lcov",
     "test": "npm run lint && npm run coverage"
   },
   "author": {
@@ -36,31 +36,33 @@
   },
   "license": "MIT",
   "dependencies": {
-    "check-env": "1.3.0",
-    "commander": "2.20.0",
-    "discord.js": "11.5.1",
+    "commander": "^7.2.0",
+    "discord.js": "^12.5.3",
     "irc-colors": "1.5.0",
     "irc-formatting": "1.0.0-rc3",
-    "irc-upd": "0.10.0",
-    "lodash": "^4.17.15",
-    "simple-markdown": "^0.5.2",
-    "strip-json-comments": "3.0.1",
-    "winston": "3.2.1"
+    "irc-upd": "0.11.0",
+    "lodash": "^4.17.21",
+    "simple-markdown": "^0.7.3",
+    "strip-json-comments": "^3.1.1",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
-    "babel-cli": "^6.6.5",
-    "babel-core": "^6.26.3",
-    "babel-eslint": "^10.0.1",
-    "babel-preset-node6": "^11.0.0",
-    "babel-preset-stage-0": "^6.5.0",
-    "chai": "^4.2.0",
-    "coveralls": "^3.0.4",
-    "eslint": "^5.16.0",
-    "eslint-config-airbnb-base": "^13.2.0",
-    "eslint-plugin-import": "^2.18.2",
-    "mocha": "^6.1.4",
-    "nyc": "^14.1.1",
-    "sinon": "^7.4.1",
-    "sinon-chai": "^3.3.0"
+    "@babel/cli": "^7.13.16",
+    "@babel/core": "^7.13.16",
+    "@babel/eslint-parser": "^7.13.14",
+    "@babel/preset-env": "^7.13.15",
+    "@babel/register": "^7.13.16",
+    "@istanbuljs/nyc-config-babel": "^3.0.0",
+    "babel-plugin-istanbul": "^6.0.0",
+    "chai": "^4.3.4",
+    "coveralls": "^3.1.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^7.25.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "mocha": "^8.3.2",
+    "nyc": "^15.1.0",
+    "sinon": "^10.0.0",
+    "sinon-chai": "^3.6.0"
   }
 }
