@@ -1,27 +1,38 @@
-import _ from 'lodash';
-import Bot from './bot';
-import { ConfigurationError } from './errors';
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.createBots = createBots;
+
+var _lodash = _interopRequireDefault(require("lodash"));
+
+var _bot = _interopRequireDefault(require("./bot"));
+
+var _errors = require("./errors");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * Reads from the provided config file and returns an array of bots
  * @return {object[]}
  */
-export function createBots(configFile) {
-  const bots = [];
+function createBots(configFile) {
+  const bots = []; // The config file can be both an array and an object
 
-  // The config file can be both an array and an object
   if (Array.isArray(configFile)) {
     configFile.forEach(config => {
-      const bot = new Bot(config);
+      const bot = new _bot.default(config);
       bot.connect();
       bots.push(bot);
     });
-  } else if (_.isObject(configFile)) {
-    const bot = new Bot(configFile);
+  } else if (_lodash.default.isObject(configFile)) {
+    const bot = new _bot.default(configFile);
     bot.connect();
     bots.push(bot);
   } else {
-    throw new ConfigurationError();
+    throw new _errors.ConfigurationError();
   }
+
   return bots;
 }

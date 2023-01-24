@@ -1,10 +1,25 @@
-import _ from 'lodash';
-import irc from 'irc-upd';
-import discord from 'discord.js';
-import logger from './logger';
-import { ConfigurationError } from './errors';
-import { validateChannelMapping } from './validators';
-import { formatFromDiscordToIRC, formatFromIRCToDiscord } from './formatting';
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _lodash = _interopRequireDefault(require("lodash"));
+
+var _ircUpd = _interopRequireDefault(require("irc-upd"));
+
+var _discord = _interopRequireDefault(require("discord.js"));
+
+var _logger = _interopRequireDefault(require("./logger"));
+
+var _errors = require("./errors");
+
+var _validators = require("./validators");
+
+var _formatting = require("./formatting");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Usernames need to be between 2 and 32 characters for webhooks:
 const USERNAME_MIN_LENGTH = 2;
@@ -12,20 +27,20 @@ const USERNAME_MAX_LENGTH = 32;
 const REQUIRED_FIELDS = ['server', 'nickname', 'channelMapping', 'discordToken'];
 const DEFAULT_NICK_COLORS = ['light_blue', 'dark_blue', 'light_red', 'dark_red', 'light_green', 'dark_green', 'magenta', 'light_magenta', 'orange', 'yellow', 'cyan', 'light_cyan'];
 const patternMatch = /{\$(.+?)}/g;
-
 /**
  * An IRC bot, works as a middleman for all communication
  * @param {object} options - server, nickname, channelMapping, outgoingToken, incomingURL
  */
+
 class Bot {
   constructor(options) {
     REQUIRED_FIELDS.forEach(field => {
       if (!options[field]) {
-        throw new ConfigurationError(`Missing configuration field ${field}`);
+        throw new _errors.ConfigurationError(`Missing configuration field ${field}`);
       }
     });
-    validateChannelMapping(options.channelMapping);
-    this.discord = new discord.Client({
+    (0, _validators.validateChannelMapping)(options.channelMapping);
+    this.discord = new _discord.default.Client({
       autoReconnect: true,
       retryLimit: 3
     });
@@ -35,73 +50,71 @@ class Bot {
     this.discordToken = options.discordToken;
     this.commandCharacters = options.commandCharacters || [];
     this.ircNickColor = options.ircNickColor !== false; // default to true
+
     this.ircNickColors = options.ircNickColors || DEFAULT_NICK_COLORS;
     this.parallelPingFix = options.parallelPingFix === true; // default: false
-    this.channels = _.values(options.channelMapping);
+
+    this.channels = _lodash.default.values(options.channelMapping);
     this.ircStatusNotices = options.ircStatusNotices;
     this.announceSelfJoin = options.announceSelfJoin;
-    this.webhookOptions = options.webhooks;
+    this.webhookOptions = options.webhooks; // Nicks to ignore
 
-    // Nicks to ignore
     this.ignoreUsers = options.ignoreUsers || {};
     this.ignoreUsers.irc = this.ignoreUsers.irc || [];
     this.ignoreUsers.discord = this.ignoreUsers.discord || [];
-    this.ignoreUsers.discordIds = this.ignoreUsers.discordIds || [];
-
-    // "{$keyName}" => "variableValue"
+    this.ignoreUsers.discordIds = this.ignoreUsers.discordIds || []; // "{$keyName}" => "variableValue"
     // author/nickname: nickname of the user who sent the message
     // discordChannel: Discord channel (e.g. #general)
     // ircChannel: IRC channel (e.g. #irc)
     // text: the (appropriately formatted) message content
-    this.format = options.format || {};
 
-    // "{$keyName}" => "variableValue"
+    this.format = options.format || {}; // "{$keyName}" => "variableValue"
     // displayUsername: nickname with wrapped colors
     // attachmentURL: the URL of the attachment (only applicable in formatURLAttachment)
-    this.formatIRCText = this.format.ircText || '<{$displayUsername}> {$text}';
-    this.formatURLAttachment = this.format.urlAttachment || '<{$displayUsername}> {$attachmentURL}';
 
-    // "{$keyName}" => "variableValue"
+    this.formatIRCText = this.format.ircText || '<{$displayUsername}> {$text}';
+    this.formatURLAttachment = this.format.urlAttachment || '<{$displayUsername}> {$attachmentURL}'; // "{$keyName}" => "variableValue"
     // side: "Discord" or "IRC"
+
     if ('commandPrelude' in this.format) {
       this.formatCommandPrelude = this.format.commandPrelude;
     } else {
       this.formatCommandPrelude = 'Command sent from {$side} by {$nickname}:';
-    }
-
-    // "{$keyName}" => "variableValue"
+    } // "{$keyName}" => "variableValue"
     // withMentions: text with appropriate mentions reformatted
-    this.formatDiscord = this.format.discord || '**<{$author}>** {$withMentions}';
 
-    // "{$keyName} => "variableValue"
+
+    this.formatDiscord = this.format.discord || '**<{$author}>** {$withMentions}'; // "{$keyName} => "variableValue"
     // nickname: nickame of IRC message sender
-    this.formatWebhookAvatarURL = this.format.webhookAvatarURL;
 
-    // Keep track of { channel => [list, of, usernames] } for ircStatusNotices
+    this.formatWebhookAvatarURL = this.format.webhookAvatarURL; // Keep track of { channel => [list, of, usernames] } for ircStatusNotices
+
     this.channelUsers = {};
     this.channelMapping = {};
-    this.webhooks = {};
+    this.webhooks = {}; // Remove channel passwords from the mapping and lowercase IRC channel names
 
-    // Remove channel passwords from the mapping and lowercase IRC channel names
-    _.forOwn(options.channelMapping, (ircChan, discordChan) => {
+    _lodash.default.forOwn(options.channelMapping, (ircChan, discordChan) => {
       this.channelMapping[discordChan] = ircChan.split(' ')[0].toLowerCase();
     });
-    this.invertedMapping = _.invert(this.channelMapping);
+
+    this.invertedMapping = _lodash.default.invert(this.channelMapping);
     this.autoSendCommands = options.autoSendCommands || [];
   }
-  connect() {
-    logger.debug('Connecting to IRC and Discord');
-    this.discord.login(this.discordToken);
 
-    // Extract id and token from Webhook urls and connect.
-    _.forOwn(this.webhookOptions, (url, channel) => {
+  connect() {
+    _logger.default.debug('Connecting to IRC and Discord');
+
+    this.discord.login(this.discordToken); // Extract id and token from Webhook urls and connect.
+
+    _lodash.default.forOwn(this.webhookOptions, (url, channel) => {
       const [id, token] = url.split('/').slice(-2);
-      const client = new discord.WebhookClient(id, token);
+      const client = new _discord.default.WebhookClient(id, token);
       this.webhooks[channel] = {
         id,
         client
       };
     });
+
     const ircOptions = {
       userName: this.nickname,
       realName: this.nickname,
@@ -112,43 +125,47 @@ class Bot {
       autoRenick: true,
       // options specified in the configuration file override the above defaults
       ...this.ircOptions
-    };
+    }; // default encoding to UTF-8 so messages to Discord aren't corrupted
 
-    // default encoding to UTF-8 so messages to Discord aren't corrupted
     if (!Object.prototype.hasOwnProperty.call(ircOptions, 'encoding')) {
-      if (irc.canConvertEncoding()) {
+      if (_ircUpd.default.canConvertEncoding()) {
         ircOptions.encoding = 'utf-8';
       } else {
-        logger.warn('Cannot convert message encoding; you may encounter corrupted characters with non-English text.\n' + 'For information on how to fix this, please see: https://github.com/Throne3d/node-irc#character-set-detection');
+        _logger.default.warn('Cannot convert message encoding; you may encounter corrupted characters with non-English text.\n' + 'For information on how to fix this, please see: https://github.com/Throne3d/node-irc#character-set-detection');
       }
     }
-    this.ircClient = new irc.Client(this.server, this.nickname, ircOptions);
+
+    this.ircClient = new _ircUpd.default.Client(this.server, this.nickname, ircOptions);
     this.attachListeners();
   }
+
   disconnect() {
     this.ircClient.disconnect();
     this.discord.destroy();
     Object.values(this.webhooks).forEach(x => x.client.destroy());
   }
+
   attachListeners() {
     this.discord.on('ready', () => {
-      logger.info('Connected to Discord');
+      _logger.default.info('Connected to Discord');
     });
     this.ircClient.on('registered', message => {
-      logger.info('Connected to IRC');
-      logger.debug('Registered event: ', message);
+      _logger.default.info('Connected to IRC');
+
+      _logger.default.debug('Registered event: ', message);
+
       this.autoSendCommands.forEach(element => {
         this.ircClient.send(...element);
       });
     });
     this.ircClient.on('error', error => {
-      logger.error('Received error event from IRC', error);
+      _logger.default.error('Received error event from IRC', error);
     });
     this.discord.on('error', error => {
-      logger.error('Received error event from Discord', error);
+      _logger.default.error('Received error event from Discord', error);
     });
     this.discord.on('warn', warning => {
-      logger.warn('Received warn event from Discord', warning);
+      _logger.default.warn('Received warn event from Discord', warning);
     });
     this.discord.on('message', message => {
       // Ignore bot messages and people leaving/joining
@@ -162,6 +179,7 @@ class Bot {
       if (!this.ircStatusNotices) return;
       channels.forEach(channelName => {
         const channel = channelName.toLowerCase();
+
         if (this.channelUsers[channel]) {
           if (this.channelUsers[channel].has(oldNick)) {
             this.channelUsers[channel].delete(oldNick);
@@ -169,52 +187,62 @@ class Bot {
             this.sendExactToDiscord(channel, `*${oldNick}* is now known as ${newNick}`);
           }
         } else {
-          logger.warn(`No channelUsers found for ${channel} when ${oldNick} changed.`);
+          _logger.default.warn(`No channelUsers found for ${channel} when ${oldNick} changed.`);
         }
       });
     });
     this.ircClient.on('join', (channelName, nick) => {
-      logger.debug('Received join:', channelName, nick);
+      _logger.default.debug('Received join:', channelName, nick);
+
       if (!this.ircStatusNotices) return;
       if (nick === this.ircClient.nick && !this.announceSelfJoin) return;
-      const channel = channelName.toLowerCase();
-      // self-join is announced before names (which includes own nick)
+      const channel = channelName.toLowerCase(); // self-join is announced before names (which includes own nick)
       // so don't add nick to channelUsers
+
       if (nick !== this.ircClient.nick) this.channelUsers[channel].add(nick);
       this.sendExactToDiscord(channel, `*${nick}* has joined the channel`);
     });
     this.ircClient.on('part', (channelName, nick, reason) => {
-      logger.debug('Received part:', channelName, nick, reason);
+      _logger.default.debug('Received part:', channelName, nick, reason);
+
       if (!this.ircStatusNotices) return;
-      const channel = channelName.toLowerCase();
-      // remove list of users when no longer in channel (as it will become out of date)
+      const channel = channelName.toLowerCase(); // remove list of users when no longer in channel (as it will become out of date)
+
       if (nick === this.ircClient.nick) {
-        logger.debug('Deleting channelUsers as bot parted:', channel);
+        _logger.default.debug('Deleting channelUsers as bot parted:', channel);
+
         delete this.channelUsers[channel];
         return;
       }
+
       if (this.channelUsers[channel]) {
         this.channelUsers[channel].delete(nick);
       } else {
-        logger.warn(`No channelUsers found for ${channel} when ${nick} parted.`);
+        _logger.default.warn(`No channelUsers found for ${channel} when ${nick} parted.`);
       }
+
       this.sendExactToDiscord(channel, `*${nick}* has left the channel (${reason})`);
     });
     this.ircClient.on('quit', (nick, reason, channels) => {
-      logger.debug('Received quit:', nick, channels);
+      _logger.default.debug('Received quit:', nick, channels);
+
       if (!this.ircStatusNotices || nick === this.ircClient.nick) return;
       channels.forEach(channelName => {
         const channel = channelName.toLowerCase();
+
         if (!this.channelUsers[channel]) {
-          logger.warn(`No channelUsers found for ${channel} when ${nick} quit, ignoring.`);
+          _logger.default.warn(`No channelUsers found for ${channel} when ${nick} quit, ignoring.`);
+
           return;
         }
+
         if (!this.channelUsers[channel].delete(nick)) return;
         this.sendExactToDiscord(channel, `*${nick}* has quit (${reason})`);
       });
     });
     this.ircClient.on('names', (channelName, nicks) => {
-      logger.debug('Received names:', channelName, nicks);
+      _logger.default.debug('Received names:', channelName, nicks);
+
       if (!this.ircStatusNotices) return;
       const channel = channelName.toLowerCase();
       this.channelUsers[channel] = new Set(Object.keys(nicks));
@@ -223,29 +251,36 @@ class Bot {
       this.sendToDiscord(author, to, `_${text}_`);
     });
     this.ircClient.on('invite', (channel, from) => {
-      logger.debug('Received invite:', channel, from);
+      _logger.default.debug('Received invite:', channel, from);
+
       if (!this.invertedMapping[channel]) {
-        logger.debug('Channel not found in config, not joining:', channel);
+        _logger.default.debug('Channel not found in config, not joining:', channel);
       } else {
         this.ircClient.join(channel);
-        logger.debug('Joining channel:', channel);
+
+        _logger.default.debug('Joining channel:', channel);
       }
     });
-    if (logger.level === 'debug') {
+
+    if (_logger.default.level === 'debug') {
       this.discord.on('debug', message => {
-        logger.debug('Received debug event from Discord', message);
+        _logger.default.debug('Received debug event from Discord', message);
       });
     }
   }
+
   static getDiscordNicknameOnServer(user, guild) {
     if (guild) {
       const userDetails = guild.members.cache.get(user.id);
+
       if (userDetails) {
         return userDetails.nickname || user.username;
       }
     }
+
     return user.username;
   }
+
   parseText(message) {
     const text = message.mentions.users.reduce((content, mention) => {
       const displayName = Bot.getDiscordNicknameOnServer(mention, message.guild);
@@ -262,48 +297,58 @@ class Bot {
       return '@deleted-role';
     }).replace(/<a?(:\w+:)\d+>/g, (match, emoteName) => emoteName);
   }
+
   isCommandMessage(message) {
     return this.commandCharacters.some(prefix => message.startsWith(prefix));
   }
+
   ignoredIrcUser(user) {
     return this.ignoreUsers.irc.some(i => i.toLowerCase() === user.toLowerCase());
   }
+
   ignoredDiscordUser(discordUser) {
     const ignoredName = this.ignoreUsers.discord.some(i => i.toLowerCase() === discordUser.username.toLowerCase());
     const ignoredId = this.ignoreUsers.discordIds.some(i => i === discordUser.id);
     return ignoredName || ignoredId;
   }
+
   static substitutePattern(message, patternMapping) {
     return message.replace(patternMatch, (match, varName) => patternMapping[varName] || match);
   }
+
   sendToIRC(message) {
     const {
       author
-    } = message;
-    // Ignore messages sent by the bot itself:
-    if (author.id === this.discord.user.id || Object.keys(this.webhooks).some(channel => this.webhooks[channel].id === author.id)) return;
+    } = message; // Ignore messages sent by the bot itself:
 
-    // Do not send to IRC if this user is on the ignore list.
+    if (author.id === this.discord.user.id || Object.keys(this.webhooks).some(channel => this.webhooks[channel].id === author.id)) return; // Do not send to IRC if this user is on the ignore list.
+
     if (this.ignoredDiscordUser(author)) {
       return;
     }
+
     const channelName = `#${message.channel.name}`;
     const ircChannel = this.channelMapping[message.channel.id] || this.channelMapping[channelName];
-    logger.debug('Channel Mapping', channelName, this.channelMapping[channelName]);
+
+    _logger.default.debug('Channel Mapping', channelName, this.channelMapping[channelName]);
+
     if (ircChannel) {
       const fromGuild = message.guild;
       const nickname = Bot.getDiscordNicknameOnServer(author, fromGuild);
       let text = this.parseText(message);
       let displayUsername = nickname;
+
       if (this.parallelPingFix) {
         // Prevent users of both IRC and Discord from
         // being mentioned in IRC when they talk in Discord.
         displayUsername = `${displayUsername.slice(0, 1)}\u200B${displayUsername.slice(1)}`;
       }
+
       if (this.ircNickColor) {
         const colorIndex = (nickname.charCodeAt(0) + nickname.length) % this.ircNickColors.length;
-        displayUsername = irc.colors.wrap(this.ircNickColors[colorIndex], displayUsername);
+        displayUsername = _ircUpd.default.colors.wrap(this.ircNickColors[colorIndex], displayUsername);
       }
+
       const patternMap = {
         author: nickname,
         nickname,
@@ -312,115 +357,135 @@ class Bot {
         discordChannel: channelName,
         ircChannel
       };
+
       if (this.isCommandMessage(text)) {
         patternMap.side = 'Discord';
-        logger.debug('Sending command message to IRC', ircChannel, text);
-        // if (prelude) this.ircClient.say(ircChannel, prelude);
+
+        _logger.default.debug('Sending command message to IRC', ircChannel, text); // if (prelude) this.ircClient.say(ircChannel, prelude);
+
+
         if (this.formatCommandPrelude) {
           const prelude = Bot.substitutePattern(this.formatCommandPrelude, patternMap);
           this.ircClient.say(ircChannel, prelude);
         }
+
         this.ircClient.say(ircChannel, text);
       } else {
         if (text !== '') {
           // Convert formatting
-          text = formatFromDiscordToIRC(text);
+          text = (0, _formatting.formatFromDiscordToIRC)(text);
           patternMap.text = text;
           text = Bot.substitutePattern(this.formatIRCText, patternMap);
-          logger.debug('Sending message to IRC', ircChannel, text);
+
+          _logger.default.debug('Sending message to IRC', ircChannel, text);
+
           this.ircClient.say(ircChannel, text);
         }
+
         if (message.attachments && message.attachments.size) {
           message.attachments.forEach(a => {
             patternMap.attachmentURL = a.url;
             const urlMessage = Bot.substitutePattern(this.formatURLAttachment, patternMap);
-            logger.debug('Sending attachment URL to IRC', ircChannel, urlMessage);
+
+            _logger.default.debug('Sending attachment URL to IRC', ircChannel, urlMessage);
+
             this.ircClient.say(ircChannel, urlMessage);
           });
         }
       }
     }
   }
+
   findDiscordChannel(ircChannel) {
     const discordChannelName = this.invertedMapping[ircChannel.toLowerCase()];
+
     if (discordChannelName) {
       // #channel -> channel before retrieving and select only text channels:
       let discordChannel = null;
+
       if (this.discord.channels.cache.has(discordChannelName)) {
         discordChannel = this.discord.channels.cache.get(discordChannelName);
       } else if (discordChannelName.startsWith('#')) {
         discordChannel = this.discord.channels.cache.filter(c => c.type === 'text').find(c => c.name === discordChannelName.slice(1));
       }
+
       if (!discordChannel) {
-        logger.info('Tried to send a message to a channel the bot isn\'t in: ', discordChannelName);
+        _logger.default.info('Tried to send a message to a channel the bot isn\'t in: ', discordChannelName);
+
         return null;
       }
+
       return discordChannel;
     }
+
     return null;
   }
+
   findWebhook(ircChannel) {
     const discordChannelName = this.invertedMapping[ircChannel.toLowerCase()];
     return discordChannelName && this.webhooks[discordChannelName];
   }
+
   getDiscordAvatar(nick, channel) {
     const guildMembers = this.findDiscordChannel(channel).guild.members.cache;
+
     const findByNicknameOrUsername = caseSensitive => member => {
       if (caseSensitive) {
         return member.user.username === nick || member.nickname === nick;
       }
+
       const nickLowerCase = nick.toLowerCase();
       return member.user.username.toLowerCase() === nickLowerCase || member.nickname && member.nickname.toLowerCase() === nickLowerCase;
-    };
+    }; // Try to find exact matching case
 
-    // Try to find exact matching case
-    let users = guildMembers.filter(findByNicknameOrUsername(true));
 
-    // Now let's search case insensitive.
+    let users = guildMembers.filter(findByNicknameOrUsername(true)); // Now let's search case insensitive.
+
     if (users.size === 0) {
       users = guildMembers.filter(findByNicknameOrUsername(false));
-    }
+    } // No matching user or more than one => default avatar
 
-    // No matching user or more than one => default avatar
+
     if (users && users.size === 1) {
       const url = users.first().user.avatarURL({
         size: 128,
         format: 'png'
       });
       if (url) return url;
-    }
+    } // If there isn't a URL format, don't send an avatar at all
 
-    // If there isn't a URL format, don't send an avatar at all
+
     if (this.formatWebhookAvatarURL) {
       return Bot.substitutePattern(this.formatWebhookAvatarURL, {
         nickname: nick
       });
     }
-    return null;
-  }
 
-  // compare two strings case-insensitively
+    return null;
+  } // compare two strings case-insensitively
   // for discord mention matching
+
+
   static caseComp(str1, str2) {
     return str1.toUpperCase() === str2.toUpperCase();
-  }
-
-  // check if the first string starts with the second case-insensitively
+  } // check if the first string starts with the second case-insensitively
   // for discord mention matching
+
+
   static caseStartsWith(str1, str2) {
     return str1.toUpperCase().startsWith(str2.toUpperCase());
   }
+
   sendToDiscord(author, channel, text) {
     const discordChannel = this.findDiscordChannel(channel);
-    if (!discordChannel) return;
+    if (!discordChannel) return; // Do not send to Discord if this user is on the ignore list.
 
-    // Do not send to Discord if this user is on the ignore list.
     if (this.ignoredIrcUser(author)) {
       return;
-    }
+    } // Convert text formatting (bold, italics, underscore)
 
-    // Convert text formatting (bold, italics, underscore)
-    const withFormat = formatFromIRCToDiscord(text);
+
+    const withFormat = (0, _formatting.formatFromIRCToDiscord)(text);
     const patternMap = {
       author,
       nickname: author,
@@ -429,16 +494,21 @@ class Bot {
       discordChannel: `#${discordChannel.name}`,
       ircChannel: channel
     };
+
     if (this.isCommandMessage(text)) {
       patternMap.side = 'IRC';
-      logger.debug('Sending command message to Discord', `#${discordChannel.name}`, text);
+
+      _logger.default.debug('Sending command message to Discord', `#${discordChannel.name}`, text);
+
       if (this.formatCommandPrelude) {
         const prelude = Bot.substitutePattern(this.formatCommandPrelude, patternMap);
         discordChannel.send(prelude);
       }
+
       discordChannel.send(text);
       return;
     }
+
     const {
       guild
     } = discordChannel;
@@ -450,30 +520,25 @@ class Bot {
       if (user) return user;
       return match;
     }).replace(/^([^@\s:,]+)[:,]|@([^\s]+)/g, (match, startRef, atRef) => {
-      const reference = startRef || atRef;
-
-      // this preliminary stuff is ultimately unnecessary
+      const reference = startRef || atRef; // this preliminary stuff is ultimately unnecessary
       // but might save time over later more complicated calculations
       // @nickname => mention, case insensitively
+
       const nickUser = guild.members.cache.find(x => x.nickname && Bot.caseComp(x.nickname, reference));
-      if (nickUser) return nickUser;
+      if (nickUser) return nickUser; // @username => mention, case insensitively
 
-      // @username => mention, case insensitively
       const user = guild.members.cache.find(x => Bot.caseComp(x.user.username, reference));
-      if (user) return user;
+      if (user) return user; // @role => mention, case insensitively
 
-      // @role => mention, case insensitively
       const role = guild.roles.cache.find(x => x.mentionable && Bot.caseComp(x.name, reference));
-      if (role) return role;
-
-      // No match found checking the whole word. Check for partial matches now instead.
+      if (role) return role; // No match found checking the whole word. Check for partial matches now instead.
       // @nameextra => [mention]extra, case insensitively, as Discord does
       // uses the longest match, and if there are two, whichever is a match by case
+
       let matchLength = 0;
       let bestMatch = null;
-      let caseMatched = false;
+      let caseMatched = false; // check if a partial match is found in reference and if so update the match values
 
-      // check if a partial match is found in reference and if so update the match values
       const checkMatch = function (matchString, matchValue) {
         // if the matchString is longer than the current best and is a match
         // or if it's the same length but it matches by case unlike the current match
@@ -483,21 +548,20 @@ class Bot {
           bestMatch = matchValue;
           caseMatched = reference.startsWith(matchString);
         }
-      };
+      }; // check users by username and nickname
 
-      // check users by username and nickname
+
       guild.members.cache.forEach(member => {
         checkMatch(member.user.username, member);
         if (bestMatch === member || !member.nickname) return;
         checkMatch(member.nickname, member);
-      });
-      // check mentionable roles by visible name
+      }); // check mentionable roles by visible name
+
       guild.roles.cache.forEach(member => {
         if (!member.mentionable) return;
         checkMatch(member.name, member);
-      });
+      }); // if a partial match was found, return the match and the unmatched trailing characters
 
-      // if a partial match was found, return the match and the unmatched trailing characters
       if (bestMatch) return bestMatch.toString() + reference.substring(matchLength);
       return match;
     }).replace(/:(\w+):/g, (match, ident) => {
@@ -509,45 +573,57 @@ class Bot {
       // channel names can't contain spaces, #, @, ', !, ?, , or .
       // (based on brief testing. they also can't contain some other symbols,
       // but these seem likely to be common around channel references)
-
       // discord matches channel names case insensitively
       const chan = guild.channels.cache.find(x => Bot.caseComp(x.name, channelName));
       return chan || match;
-    });
+    }); // Webhooks first
 
-    // Webhooks first
     const webhook = this.findWebhook(channel);
+
     if (webhook) {
-      logger.debug('Sending message to Discord via webhook', withMentions, channel, '->', `#${discordChannel.name}`);
+      _logger.default.debug('Sending message to Discord via webhook', withMentions, channel, '->', `#${discordChannel.name}`);
+
       const permissions = discordChannel.permissionsFor(this.discord.user);
       let canPingEveryone = false;
+
       if (permissions) {
-        canPingEveryone = permissions.has(discord.Permissions.FLAGS.MENTION_EVERYONE);
+        canPingEveryone = permissions.has(_discord.default.Permissions.FLAGS.MENTION_EVERYONE);
       }
+
       const avatarURL = this.getDiscordAvatar(author, channel);
-      const username = _.padEnd(author.substring(0, USERNAME_MAX_LENGTH), USERNAME_MIN_LENGTH, '_');
+
+      const username = _lodash.default.padEnd(author.substring(0, USERNAME_MAX_LENGTH), USERNAME_MIN_LENGTH, '_');
+
       webhook.client.send(withMentions, {
         username,
         avatarURL,
         disableMentions: canPingEveryone ? 'none' : 'everyone'
-      }).catch(logger.error);
+      }).catch(_logger.default.error);
       return;
     }
-    patternMap.withMentions = withMentions;
 
-    // Add bold formatting:
+    patternMap.withMentions = withMentions; // Add bold formatting:
     // Use custom formatting from config / default formatting with bold author
+
     const withAuthor = Bot.substitutePattern(this.formatDiscord, patternMap);
-    logger.debug('Sending message to Discord', withAuthor, channel, '->', `#${discordChannel.name}`);
+
+    _logger.default.debug('Sending message to Discord', withAuthor, channel, '->', `#${discordChannel.name}`);
+
     discordChannel.send(withAuthor);
   }
-
   /* Sends a message to Discord exactly as it appears */
+
+
   sendExactToDiscord(channel, text) {
     const discordChannel = this.findDiscordChannel(channel);
     if (!discordChannel) return;
-    logger.debug('Sending special message to Discord', text, channel, '->', `#${discordChannel.name}`);
+
+    _logger.default.debug('Sending special message to Discord', text, channel, '->', `#${discordChannel.name}`);
+
     discordChannel.send(text);
   }
+
 }
-export default Bot;
+
+var _default = Bot;
+exports.default = _default;

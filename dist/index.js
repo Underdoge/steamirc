@@ -1,8 +1,17 @@
 #!/usr/bin/env node
-import { createBots } from './helpers';
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _helpers = require("./helpers");
 
 /* istanbul ignore next */
 if (!module.parent) {
   require('./cli').default();
 }
-export default createBots;
+
+var _default = _helpers.createBots;
+exports.default = _default;
